@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>NICCIAN Marketplace</title>
+  <meta name="description" content="Tanzania Agriculture Wholesale Platform"/>
+  <meta name="theme-color" content="#F47920"/>
+
+  <!-- PWA Meta Tags -->
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="NICCIAN"/>
+
+  <!-- Inline Manifest via JS (no server needed) -->
+  <link rel="manifest" href="#" id="manifest-placeholder"/>
+
+  <!-- Inline SVG favicon as data URI -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><radialGradient id='g' cx='38%25' cy='35%25'><stop offset='0%25' stop-color='%23FFBA5A'/><stop offset='100%25' stop-color='%23F47920'/></radialGradient></defs><circle cx='50' cy='50' r='48' fill='url(%23g)'/><path d='M20 76 L20 26 L33 26 L58 62 L58 26 L72 26 L72 76 L59 76 L34 40 L34 76 Z' fill='white' opacity='0.95'/><path d='M60 28 Q74 14 84 20 Q80 36 66 37 Q63 33 60 28Z' fill='%235BA832'/></svg>"/>
+
+  <!-- Apple touch icon (inline SVG as PNG-like data) -->
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><radialGradient id='g' cx='38%25' cy='35%25'><stop offset='0%25' stop-color='%23FFBA5A'/><stop offset='100%25' stop-color='%23F47920'/></radialGradient></defs><circle cx='50' cy='50' r='50' fill='url(%23g)'/><path d='M20 76 L20 26 L33 26 L58 62 L58 26 L72 26 L72 76 L59 76 L34 40 L34 76 Z' fill='white' opacity='0.95'/><path d='M60 28 Q74 14 84 20 Q80 36 66 37 Q63 33 60 28Z' fill='%235BA832'/></svg>"/>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Trebuchet MS', sans-serif; background: #FFF8F2; color: #1A1A1A; overscroll-behavior: none; }
+    button { cursor: pointer; font-family: inherit; }
+    input, select { font-family: inherit; }
+
+    /* Screens */
+    .screen { display: none; min-height: 100vh; }
+    .screen.active { display: block; }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #C95E0A 0%, #F47920 55%, #F9A94B 100%);
+      padding: 14px 18px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 4px 24px rgba(196,90,10,0.35);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .header-title { color: #fff; font-weight: 900; font-size: 17px; letter-spacing: 1px; }
+    .header-sub { color: rgba(255,255,255,0.82); font-size: 10px; }
+    .header-btns { display: flex; gap: 8px; }
+    .btn-list {
+      background: #5BA832; border: none; color: #fff; border-radius: 10px;
+      padding: 8px 13px; font-size: 12px; font-weight: 700;
+      box-shadow: 0 2px 10px rgba(62,122,31,0.45);
+    }
+    .btn-logout {
+      background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3);
+      color: #fff; border-radius: 10px; padding: 8px 12px; font-size: 12px;
+    }
+    .btn-back {
+      background: rgba(255,255,255,0.22); border: none; color: #fff;
+      border-radius: 9px; padding: 6px 13px; font-size: 17px; font-weight: 700;
+    }
+
+    /* Body container */
+    .body { padding: 20px 18px 80px; max-width: 820px; margin: 0 auto; }
+
+    /* Stat cards */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .stat-card {
+      background: #fff; border-radius: 14px; padding: 14px 10px; text-align: center;
+      box-shadow: 0 2px 12px rgba(244,121,32,0.10);
+    }
+    .stat-icon { font-size: 20px; }
+    .stat-value { font-weight: 800; font-size: 15px; margin-top: 4px; }
+    .stat-label { font-size: 10px; color: #777; margin-top: 2px; }
+
+    /* Chart card */
+    .chart-card {
+      background: #fff; border-radius: 20px; padding: 20px 16px; margin-bottom: 20px;
+      box-shadow: 0 2px 20px rgba(244,121,32,0.10); border: 1px solid #FFE0C0;
+    }
+    .chart-title {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+    }
+    .chart-bar { width: 4px; height: 20px; background: linear-gradient(#F47920, #5BA832); border-radius: 4px; }
+    .chart-title h3 { font-size: 14px; font-weight: 800; color: #C95E0A; }
+
+    /* Live banner */
+    .live-banner {
+      background: linear-gradient(135deg, #F47920, #5BA832);
+      border-radius: 12px; padding: 10px 18px; margin-bottom: 18px;
+      display: flex; align-items: center; gap: 10px;
+      color: #fff; font-weight: 700; font-size: 13px;
+    }
+
+    /* Crop grid */
+    .crop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .crop-card {
+      background: #fff; border-radius: 16px; padding: 16px 14px;
+      border: 1.5px solid #FFE0C0; transition: all 0.38s; cursor: pointer;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .crop-card.flashing {
+      background: linear-gradient(135deg, #FFF3E8, #FFF0D0);
+      border-color: #F47920;
+      box-shadow: 0 0 0 2px #F47920, 0 6px 24px rgba(244,121,32,0.28);
+    }
+    .crop-icon { font-size: 30px; margin-bottom: 6px; }
+    .crop-name { font-size: 15px; font-weight: 800; }
+    .crop-qty { font-size: 13px; color: #F47920; font-weight: 700; margin-top: 4px; }
+    .crop-updated { font-size: 10px; color: #5BA832; font-weight: 700; margin-top: 2px; }
+    .crop-bar-bg { margin-top: 9px; height: 3px; background: #FFF3E8; border-radius: 4px; }
+    .crop-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s; }
+
+    /* Region header banner */
+    .region-header {
+      background: linear-gradient(135deg, #F47920, #F9A94B);
+      border-radius: 18px; padding: 18px 20px; margin-bottom: 20px; color: #fff;
+    }
+    .region-header h2 { margin: 8px 0 4px; font-size: 22px; font-weight: 900; }
+
+    /* Region list */
+    .region-item {
+      background: #fff; border-radius: 14px; padding: 16px 18px; cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      display: flex; justify-content: space-between; align-items: center;
+      border: 1px solid #FFE0C0; margin-bottom: 11px;
+    }
+    .region-name { font-weight: 800; font-size: 15px; }
+    .region-farmers { color: #5BA832; font-size: 12px; margin-top: 3px; font-weight: 600; }
+    .region-qty { font-weight: 900; font-size: 19px; color: #F47920; }
+    .region-tap { font-size: 11px; color: #777; }
+
+    /* Farmer header */
+    .farmer-header {
+      background: linear-gradient(135deg, #5BA832, #7DC242);
+      border-radius: 18px; padding: 18px 20px; margin-bottom: 20px; color: #fff;
+    }
+    .farmer-header h2 { margin: 0 0 4px; font-size: 20px; font-weight: 900; }
+
+    /* Farmer card */
+    .farmer-card {
+      background: #fff; border-radius: 18px; padding: 16px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+      display: flex; gap: 14px; align-items: center;
+      border: 1px solid #FFE0C0; margin-bottom: 13px;
+    }
+    .farmer-avatar {
+      font-size: 46px; line-height: 1;
+      background: #FFF3E8; border-radius: 14px;
+      padding: 8px 10px; flex-shrink: 0;
+    }
+    .farmer-info { flex: 1; min-width: 0; }
+    .farmer-name { font-weight: 800; font-size: 15px; }
+    .farmer-addr { font-size: 12px; color: #777; margin-top: 3px; }
+    .farmer-phone { font-size: 12px; color: #777; margin-top: 2px; }
+    .farmer-tags { margin-top: 8px; display: flex; gap: 7px; flex-wrap: wrap; }
+    .tag-orange { background: #FFF3E8; color: #C95E0A; border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 700; }
+    .tag-green  { background: #F0F9E8; color: #3E7A1F; border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 700; }
+    .btn-contact {
+      background: linear-gradient(135deg, #F47920, #F9A94B);
+      border: none; color: #fff; border-radius: 11px;
+      padding: 10px 13px; font-size: 12px; font-weight: 700;
+      box-shadow: 0 3px 12px rgba(244,121,32,0.35); flex-shrink: 0;
+    }
+    .btn-whatsapp {
+      background: linear-gradient(135deg, #25D366, #128C7E);
+      border: none; color: #fff; border-radius: 11px;
+      padding: 10px 13px; font-size: 12px; font-weight: 700;
+      box-shadow: 0 3px 12px rgba(37,211,102,0.35); flex-shrink: 0;
+    }
+
+    /* Auth screen */
+    #screen-auth {
+      background: linear-gradient(160deg, #C95E0A 0%, #F47920 45%, #5BA832 100%);
+      display: flex; align-items: center; justify-content: center; padding: 16px;
+    }
+    .auth-blob1 { position: fixed; top: -80px; right: -60px; width: 220px; height: 220px; border-radius: 50%; background: rgba(255,186,90,0.22); pointer-events: none; }
+    .auth-blob2 { position: fixed; bottom: -60px; left: -50px; width: 200px; height: 200px; border-radius: 50%; background: rgba(91,168,50,0.18); pointer-events: none; }
+    .auth-card {
+      background: rgba(255,255,255,0.97); border-radius: 28px; padding: 44px 34px;
+      width: 100%; max-width: 370px; box-shadow: 0 32px 100px rgba(0,0,0,0.28);
+    }
+    .auth-logo-wrap { text-align: center; margin-bottom: 30px; }
+    .auth-brand { font-size: 28px; font-weight: 900; color: #C95E0A; letter-spacing: 2px; margin-bottom: 2px; }
+    .auth-sub1 { color: #5BA832; font-weight: 700; font-size: 13px; }
+    .auth-sub2 { color: #999; font-size: 11px; margin-top: 3px; }
+    .auth-tabs { display: flex; background: #FFF3E8; border-radius: 14px; padding: 4px; margin-bottom: 24px; }
+    .auth-tab {
+      flex: 1; padding: 11px 0; border: none; border-radius: 11px;
+      font-weight: 700; font-size: 14px; transition: all 0.22s;
+    }
+    .auth-tab.active {
+      background: linear-gradient(135deg, #F47920, #F9A94B);
+      color: #fff; box-shadow: 0 3px 14px rgba(244,121,32,0.38);
+    }
+    .auth-tab.inactive { background: transparent; color: #F47920; }
+    .auth-input {
+      width: 100%; padding: 13px 15px;
+      border: 1.5px solid #FFE0C0; border-radius: 11px;
+      font-size: 14px; outline: none; background: #fff; margin-bottom: 14px;
+      font-family: 'Trebuchet MS', sans-serif;
+    }
+    .btn-auth {
+      width: 100%; padding: 15px 0;
+      background: linear-gradient(135deg, #F47920, #F9A94B);
+      color: #fff; border: none; border-radius: 14px;
+      font-size: 16px; font-weight: 800; letter-spacing: 0.5px;
+      box-shadow: 0 6px 24px rgba(244,121,32,0.42);
+    }
+    .auth-note { font-size: 11px; color: #aaa; text-align: center; margin-top: 14px; }
+
+    /* Farmer form */
+    .form-header {
+      background: linear-gradient(135deg, #C95E0A, #F47920);
+      padding: 16px 20px; display: flex; align-items: center; gap: 12px;
+    }
+    .form-header-title { color: #fff; font-weight: 800; font-size: 16px; }
+    .form-banner {
+      background: linear-gradient(135deg, #F47920, #5BA832);
+      border-radius: 16px; padding: 16px 20px; margin-bottom: 24px; color: #fff;
+    }
+    .form-banner-title { font-weight: 700; font-size: 15px; }
+    .form-banner-sub { font-size: 12px; opacity: 0.85; margin-top: 4px; }
+    .form-label { display: block; font-size: 13px; font-weight: 700; color: #C95E0A; margin-bottom: 6px; }
+    .form-input {
+      width: 100%; padding: 13px 15px;
+      border: 1.5px solid #FFE0C0; border-radius: 11px;
+      font-size: 14px; outline: none; background: #fff; margin-bottom: 16px;
+      font-family: 'Trebuchet MS', sans-serif;
+    }
+    .photo-zone {
+      border: 2px dashed #F9A94B; border-radius: 14px; padding: 28px 0;
+      text-align: center; background: #FFF3E8; margin-bottom: 28px; cursor: pointer;
+    }
+    .photo-icon { font-size: 36px; }
+    .photo-text { color: #F47920; font-size: 13px; margin-top: 8px; font-weight: 600; }
+    .btn-submit {
+      width: 100%; padding: 16px 0;
+      background: linear-gradient(135deg, #F47920, #F9A94B);
+      color: #fff; border: none; border-radius: 14px;
+      font-size: 16px; font-weight: 800;
+      box-shadow: 0 6px 24px rgba(244,121,32,0.4);
+    }
+
+    /* Success screen */
+    .success-wrap { min-height: 100vh; background: #FFF8F2; display: flex; align-items: center; justify-content: center; }
+    .success-card { background: #fff; border-radius: 24px; padding: 48px; text-align: center; max-width: 340px; box-shadow: 0 8px 40px rgba(244,121,32,0.15); }
+    .success-icon { font-size: 64px; margin-bottom: 16px; }
+    .success-title { color: #5BA832; font-size: 22px; font-weight: 800; margin-bottom: 10px; }
+    .success-text { color: #777; font-size: 14px; }
+    .btn-success {
+      margin-top: 24px; padding: 13px 36px;
+      background: linear-gradient(135deg, #F47920, #F9A94B);
+      color: #fff; border: none; border-radius: 14px;
+      font-weight: 700; font-size: 15px;
+      box-shadow: 0 4px 16px rgba(244,121,32,0.35);
+    }
+
+    /* Install banner */
+    #install-banner {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(135deg, #C95E0A, #F47920);
+      color: #fff; padding: 14px 18px;
+      display: flex; align-items: center; justify-content: space-between;
+      z-index: 999; box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+      display: none;
+    }
+    #install-banner.visible { display: flex; }
+    .install-text { font-size: 13px; font-weight: 700; }
+    .install-sub { font-size: 11px; opacity: 0.85; margin-top: 2px; }
+    .btn-install {
+      background: #fff; color: #F47920; border: none; border-radius: 10px;
+      padding: 9px 16px; font-weight: 800; font-size: 13px; flex-shrink: 0;
+    }
+    .btn-install-close {
+      background: rgba(255,255,255,0.2); border: none; color: #fff;
+      border-radius: 8px; padding: 6px 10px; font-size: 16px;
+    }
+
+    /* Footer */
+    .footer { text-align: center; padding: 16px 0 32px; color: #777; font-size: 11px; }
+    .footer-brand { margin-top: 4px; font-weight: 700; color: #F47920; }
+    .footer-sub { margin-top: 2px; }
+
+    /* Section heading */
+    .section-heading { color: #C95E0A; font-size: 13px; margin: 0 0 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     AUTH SCREEN
+══════════════════════════════════════════════ -->
+<div id="screen-auth" class="screen active">
+  <div class="auth-blob1"></div>
+  <div class="auth-blob2"></div>
+  <div class="auth-card">
+    <div class="auth-logo-wrap">
+      <div style="display:flex;justify-content:center;margin-bottom:12px">
+        <svg width="74" height="74" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs><radialGradient id="orb-auth" cx="38%" cy="35%"><stop offset="0%" stop-color="#FFBA5A"/><stop offset="100%" stop-color="#F47920"/></radialGradient></defs>
+          <circle cx="50" cy="50" r="48" fill="url(#orb-auth)"/>
+          <path d="M20 76 L20 26 L33 26 L58 62 L58 26 L72 26 L72 76 L59 76 L34 40 L34 76 Z" fill="white" opacity="0.95"/>
+          <path d="M60 28 Q74 14 84 20 Q80 36 66 37 Q63 33 60 28Z" fill="#5BA832"/>
+          <path d="M74 20 Q70 30 62 35" stroke="#3E7A1F" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+          <circle cx="67" cy="25" r="2.5" fill="#7DC242"/>
+        </svg>
+      </div>
+      <div class="auth-brand">NICCIAN</div>
+      <div class="auth-sub1">Marketplace</div>
+      <div class="auth-sub2">Tanzania Agriculture Wholesale Platform</div>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Login</button>
+      <button class="auth-tab inactive" id="tab-register" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <div id="register-field" style="display:none">
+      <input class="auth-input" id="reg-name" placeholder="Full Name" type="text"/>
+    </div>
+    <input class="auth-input" id="auth-phone" placeholder="Phone Number (+255...)" type="tel"/>
+    <input class="auth-input" id="auth-pass" placeholder="Password" type="password" style="margin-bottom:26px"/>
+
+    <button class="btn-auth" id="btn-auth-action" onclick="doLogin()">🔐 Login to Marketplace</button>
+    <p class="auth-note" id="auth-note" style="display:none">After registering you can list your crops for buyers across Tanzania</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     DASHBOARD SCREEN
+══════════════════════════════════════════════ -->
+<div id="screen-dashboard" class="screen">
+  <div class="header">
+    <div class="header-left">
+      <svg width="38" height="38" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <defs><radialGradient id="orb-h" cx="38%" cy="35%"><stop offset="0%" stop-color="#FFBA5A"/><stop offset="100%" stop-color="#F47920"/></radialGradient></defs>
+        <circle cx="50" cy="50" r="48" fill="url(#orb-h)"/>
+        <path d="M20 76 L20 26 L33 26 L58 62 L58 26 L72 26 L72 76 L59 76 L34 40 L34 76 Z" fill="white" opacity="0.95"/>
+        <path d="M60 28 Q74 14 84 20 Q80 36 66 37 Q63 33 60 28Z" fill="#5BA832"/>
+      </svg>
+      <div>
+        <div class="header-title">NICCIAN</div>
+        <div class="header-sub">Marketplace · Tanzania</div>
+      </div>
+    </div>
+    <div class="header-btns">
+      <button class="btn-list" onclick="showScreen('farmerForm')">+ List Crop</button>
+      <button class="btn-logout" onclick="showScreen('auth')">Logout</button>
+    </div>
+  </div>
+
+  <div class="body">
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card" style="border-top:3px solid #F47920">
+        <div class="stat-icon">📦</div>
+        <div class="stat-value" id="stat-total" style="color:#F47920">27.5K MT</div>
+        <div class="stat-label">Total Volume</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid #5BA832">
+        <div class="stat-icon">🌾</div>
+        <div class="stat-value" style="color:#5BA832">8</div>
+        <div class="stat-label">Crop Types</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid #3E7A1F">
+        <div class="stat-icon">🟢</div>
+        <div class="stat-value" style="color:#3E7A1F">Active</div>
+        <div class="stat-label">Live Updates</div>
+      </div>
+    </div>
+
+    <!-- Pie Chart -->
+    <div class="chart-card">
+      <div class="chart-title">
+        <div class="chart-bar"></div>
+        <h3>Crop Distribution by Volume (MT)</h3>
+      </div>
+      <canvas id="cropPieChart" height="260"></canvas>
+    </div>
+
+    <!-- Live Banner -->
+    <div class="live-banner">
+      <span style="font-size:16px">🔴</span>
+      <span>LIVE — Market quantities updating in real-time across all Tanzania regions</span>
+    </div>
+
+    <p class="section-heading">All Crops — Tap to explore by region</p>
+    <div class="crop-grid" id="crop-grid"></div>
+  </div>
+
+  <div class="footer">
+    <svg width="22" height="22" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="orb-f" cx="38%" cy="35%"><stop offset="0%" stop-color="#FFBA5A"/><stop offset="100%" stop-color="#F47920"/></radialGradient></defs><circle cx="50" cy="50" r="48" fill="url(#orb-f)"/><path d="M20 76 L20 26 L33 26 L58 62 L58 26 L72 26 L72 76 L59 76 L34 40 L34 76 Z" fill="white" opacity="0.95"/><path d="M60 28 Q74 14 84 20 Q80 36 66 37 Q63 33 60 28Z" fill="#5BA832"/></svg>
+    <div class="footer-brand">NICCIAN Marketplace</div>
+    <div class="footer-sub">Connecting Tanzania's Agricultural Value Chain</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     REGION SCREEN
+══════════════════════════════════════════════ -->
+<div id="screen-region" class="screen">
+  <div class="header">
+    <div class="header-left">
+      <button class="btn-back" onclick="showScreen('dashboard')">←</button>
+      <svg width="38" height="38" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="orb-r" cx="38%" cy="35%"><stop offset="0%" stop-color="#FFBA5A"/><stop offset="100%" stop-color="#F47920"/></radialGradient></defs><circle cx="50" cy="50" r="48" fill="url(#orb-r)"/><path d="M20 76 L20 26 L33 26 L58 62 L58 26 L72 26 L72 76 L59 76 L34 40 L34 76 Z" fill="white" opacity="0.95"/><path d="M60 28 Q74 14 84 20 Q80 36 66 37 Q63 33 60 28Z" fill="#5BA832"/></svg>
+      <div><div class="header-title">NICCIAN</div><div class="header-sub">Marketplace · Tanzania</div></div>
+    </div>
+    <div class="header-btns">
+      <button class="btn-list" onclick="showScreen('farmerForm')">+ List Crop</button>
+    </div>
+  </div>
+  <div class="body">
+    <div class="region-header" id="region-header"></div>
+    <div class="chart-card">
+      <div class="chart-title"><div class="chart-bar"></div><h3>Regional Distribution</h3></div>
+      <canvas id="regionPieChart" height="210"></canvas>
+    </div>
+    <div id="region-list"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     FARMERS SCREEN
+══════════════════════════════════════════════ -->
+<div id="screen-farmers" class="screen">
+  <div class="header">
+    <div class="header-left">
+      <button class="btn-back" onclick="showScreen('region')">←</button>
+      <svg width="38" height="38" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="orb-fa" cx="38%" cy="35%"><stop offset="0%" stop-color="#FFBA5A"/><stop offset="100%" stop-color="#F47920"/></radialGradient></defs><circle cx="50" cy="50" r="48" fill="url(#orb-fa)"/><path d="M20 76 L20 26 L33 26 L58 62 L58 26 L72 26 L72 76 L59 76 L34 40 L34 76 Z" fill="white" opacity="0.95"/><path d="M60 28 Q74 14 84 20 Q80 36 66 37 Q63 33 60 28Z" fill="#5BA832"/></svg>
+      <div><div class="header-title">NICCIAN</div><div class="header-sub">Marketplace · Tanzania</div></div>
+    </div>
+    <div class="header-btns">
+      <button class="btn-list" onclick="showScreen('farmerForm')">+ List Crop</button>
+    </div>
+  </div>
+  <div class="body">
+    <div class="farmer-header" id="farmer-header"></div>
+    <div id="farmer-list"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     FARMER FORM SCREEN
+══════════════════════════════════════════════ -->
+<div id="screen-farmerForm" class="screen">
+  <div class="form-header">
+    <button class="btn-back" onclick="showScreen('dashboard')">←</button>
+    <svg width="32" height="32" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="orb-ff" cx="38%" cy="35%"><stop offset="0%" stop-color="#FFBA5A"/><stop offset="100%" stop-color="#F47920"/></radialGradient></defs><circle cx="50" cy="50" r="48" fill="url(#orb-ff)"/><path d="M20 76 L20 26 L33 26 L58 62 L58 26 L72 26 L72 76 L59 76 L34 40 L34 76 Z" fill="white" opacity="0.95"/><path d="M60 28 Q74 14 84 20 Q80 36 66 37 Q63 33 60 28Z" fill="#5BA832"/></svg>
+    <div class="form-header-title">List Your Crop</div>
+  </div>
+  <div class="body">
+    <div class="form-banner">
+      <div class="form-banner-title">🌾 NICCIAN Farmer Registration</div>
+      <div class="form-banner-sub">Fill in your details to connect with wholesale buyers across Tanzania</div>
+    </div>
+    <label class="form-label">Full Name</label>
+    <input class="form-input" id="f-name" placeholder="e.g. Amina Juma"/>
+    <label class="form-label">Village / Address</label>
+    <input class="form-input" id="f-address" placeholder="e.g. Kilosa, Morogoro"/>
+    <label class="form-label">Phone Number</label>
+    <input class="form-input" id="f-phone" placeholder="e.g. +255 712 345 678" type="tel"/>
+    <label class="form-label">GPS Location (optional)</label>
+    <input class="form-input" id="f-gps" placeholder="e.g. -6.8, 37.6"/>
+    <label class="form-label">Local Authority Person</label>
+    <input class="form-input" id="f-auth" placeholder="e.g. Ward Executive Name"/>
+    <label class="form-label">Crop Type</label>
+    <select class="form-input" id="f-crop">
+      <option>Rice</option><option>Maize</option><option>Cassava</option>
+      <option>Sunflower</option><option>Beans</option><option>Sorghum</option>
+      <option>Wheat</option><option>Groundnuts</option>
+    </select>
+    <label class="form-label">Quantity Available (MT)</label>
+    <input class="form-input" id="f-qty" placeholder="e.g. 50" type="number"/>
+    <label class="form-label">Crop Photo</label>
+    <div class="photo-zone">
+      <div class="photo-icon">📸</div>
+      <div class="photo-text">Tap to upload photo</div>
+    </div>
+    <button class="btn-submit" onclick="submitForm()">Submit Listing ✓</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SUCCESS SCREEN
+══════════════════════════════════════════════ -->
+<div id="screen-success" class="screen">
+  <div class="success-wrap">
+    <div class="success-card">
+      <div class="success-icon">✅</div>
+      <div class="success-title">Listing Submitted!</div>
+      <div class="success-text">Your crop listing is under review by NICCIAN. You will be contacted shortly.</div>
+      <button class="btn-success" onclick="showScreen('dashboard')">Back to Dashboard</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     INSTALL BANNER
+══════════════════════════════════════════════ -->
+<div id="install-banner">
+  <div>
+    <div class="install-text">📱 Install NICCIAN App</div>
+    <div class="install-sub">Add to your home screen — works offline!</div>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button class="btn-install" id="btn-install-action">Install</button>
+    <button class="btn-install-close" onclick="dismissInstall()">✕</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+const COLORS = ["#F47920","#5BA832","#F9A94B","#7DC242","#F5C518","#C95E0A","#3E7A1F","#E8A020","#8BC34A","#FF7043"];
+
+let crops = [
+  {id:1, name:"Rice",       unit:"MT", total:2000,  icon:"🌾"},
+  {id:2, name:"Maize",      unit:"MT", total:10000, icon:"🌽"},
+  {id:3, name:"Cassava",    unit:"MT", total:5400,  icon:"🥔"},
+  {id:4, name:"Sunflower",  unit:"MT", total:3200,  icon:"🌻"},
+  {id:5, name:"Beans",      unit:"MT", total:1800,  icon:"🫘"},
+  {id:6, name:"Sorghum",    unit:"MT", total:2700,  icon:"🌿"},
+  {id:7, name:"Wheat",      unit:"MT", total:900,   icon:"🌾"},
+  {id:8, name:"Groundnuts", unit:"MT", total:1500,  icon:"🥜"},
+];
+
+const regionsData = {
+  Rice:      [{region:"Morogoro",qty:480,farmers:34},{region:"Tanga",qty:310,farmers:22},{region:"Dodoma",qty:250,farmers:18},{region:"Mwanza",qty:420,farmers:30},{region:"Arusha",qty:200,farmers:14},{region:"Mbeya",qty:340,farmers:25}],
+  Maize:     [{region:"Dodoma",qty:2800,farmers:120},{region:"Morogoro",qty:1900,farmers:88},{region:"Iringa",qty:2100,farmers:95},{region:"Mbeya",qty:1600,farmers:72},{region:"Singida",qty:900,farmers:41},{region:"Tabora",qty:700,farmers:33}],
+  Cassava:   [{region:"Mwanza",qty:1200,farmers:55},{region:"Kagera",qty:980,farmers:44},{region:"Tanga",qty:760,farmers:35},{region:"Coast",qty:1100,farmers:50},{region:"Lindi",qty:880,farmers:40},{region:"Mtwara",qty:480,farmers:22}],
+  Sunflower: [{region:"Dodoma",qty:900,farmers:40},{region:"Singida",qty:1200,farmers:54},{region:"Tabora",qty:700,farmers:32},{region:"Shinyanga",qty:400,farmers:18}],
+  Beans:     [{region:"Arusha",qty:400,farmers:28},{region:"Kilimanjaro",qty:600,farmers:42},{region:"Mbeya",qty:500,farmers:35},{region:"Iringa",qty:300,farmers:21}],
+  Sorghum:   [{region:"Dodoma",qty:800,farmers:36},{region:"Singida",qty:700,farmers:32},{region:"Tabora",qty:600,farmers:27},{region:"Shinyanga",qty:600,farmers:28}],
+  Wheat:     [{region:"Arusha",qty:300,farmers:15},{region:"Kilimanjaro",qty:400,farmers:20},{region:"Mbeya",qty:200,farmers:10}],
+  Groundnuts:[{region:"Tabora",qty:400,farmers:22},{region:"Shinyanga",qty:500,farmers:28},{region:"Mwanza",qty:350,farmers:19},{region:"Kagera",qty:250,farmers:14}],
+};
+
+const farmersData = {
+  Morogoro: [{id:1,name:"Amina Juma",address:"Kilosa, Morogoro",phone:"+255 712 345 678",qty:45,image:"👩🏾‍🌾"},{id:2,name:"Hassan Mwalimu",address:"Mvomero, Morogoro",phone:"+255 754 234 567",qty:60,image:"👨🏾‍🌾"},{id:3,name:"Fatuma Said",address:"Ulanga, Morogoro",phone:"+255 623 456 789",qty:38,image:"👩🏿‍🌾"},{id:4,name:"Joseph Kimani",address:"Gairo, Morogoro",phone:"+255 785 678 901",qty:52,image:"👨🏿‍🌾"}],
+  Tanga:    [{id:5,name:"Rehema Moshi",address:"Korogwe, Tanga",phone:"+255 716 789 012",qty:35,image:"👩🏾‍🌾"},{id:6,name:"Ali Hamisi",address:"Muheza, Tanga",phone:"+255 753 890 123",qty:28,image:"👨🏾‍🌾"},{id:7,name:"Salma Abdallah",address:"Handeni, Tanga",phone:"+255 699 901 234",qty:42,image:"👩🏿‍🌾"}],
+  Dodoma:   [{id:8,name:"Peter Mwangi",address:"Kongwa, Dodoma",phone:"+255 714 012 345",qty:55,image:"👨🏾‍🌾"},{id:9,name:"Mary Chacha",address:"Bahi, Dodoma",phone:"+255 756 123 456",qty:40,image:"👩🏾‍🌾"},{id:10,name:"David Msigwa",address:"Chamwino, Dodoma",phone:"+255 621 234 567",qty:48,image:"👨🏿‍🌾"}],
+  Mwanza:   [{id:11,name:"Grace Tibaijuka",address:"Ilemela, Mwanza",phone:"+255 787 345 678",qty:62,image:"👩🏾‍🌾"},{id:12,name:"Charles Banda",address:"Nyamagana, Mwanza",phone:"+255 718 456 789",qty:44,image:"👨🏾‍🌾"}],
+};
+const defaultFarmers = [{id:99,name:"Sample Farmer",address:"Various Locations",phone:"+255 700 000 000",qty:30,image:"👨🏾‍🌾"},{id:100,name:"Another Farmer",address:"Various Locations",phone:"+255 700 000 001",qty:25,image:"👩🏾‍🌾"}];
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let currentScreen = "auth";
+let selectedCrop = null;
+let selectedRegion = null;
+let flashIds = [];
+let pieChart = null;
+let regionChart = null;
+let liveInterval = null;
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  currentScreen = name;
+  window.scrollTo(0,0);
+
+  if (name === 'dashboard') {
+    renderDashboard();
+    startLiveUpdates();
+  } else {
+    stopLiveUpdates();
+  }
+  if (name === 'region' && selectedCrop) renderRegion();
+  if (name === 'farmers' && selectedRegion) renderFarmers();
+}
+
+// ═══════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════
+let isRegister = false;
+function switchTab(tab) {
+  isRegister = tab === 'register';
+  document.getElementById('tab-login').className = 'auth-tab ' + (!isRegister ? 'active' : 'inactive');
+  document.getElementById('tab-register').className = 'auth-tab ' + (isRegister ? 'active' : 'inactive');
+  document.getElementById('register-field').style.display = isRegister ? 'block' : 'none';
+  document.getElementById('btn-auth-action').textContent = isRegister ? '🌱 Create Farmer Account' : '🔐 Login to Marketplace';
+  document.getElementById('auth-note').style.display = isRegister ? 'block' : 'none';
+}
+
+function doLogin() {
+  if (isRegister) {
+    showScreen('farmerForm');
+  } else {
+    showScreen('dashboard');
+  }
+}
+
+// ═══════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════
+function renderDashboard() {
+  const total = crops.reduce((a,c) => a + c.total, 0);
+  document.getElementById('stat-total').textContent = (total/1000).toFixed(1) + 'K MT';
+
+  renderCropGrid();
+  renderPieChart();
+}
+
+function renderCropGrid() {
+  const grid = document.getElementById('crop-grid');
+  grid.innerHTML = '';
+  crops.forEach((crop, i) => {
+    const fl = flashIds.includes(crop.id);
+    const pct = Math.min(100, (crop.total / 10000) * 100);
+    const div = document.createElement('div');
+    div.className = 'crop-card' + (fl ? ' flashing' : '');
+    div.innerHTML = `
+      <div class="crop-icon">${crop.icon}</div>
+      <div class="crop-name">${crop.name}</div>
+      <div class="crop-qty">${crop.total.toLocaleString()} ${crop.unit}</div>
+      ${fl ? '<div class="crop-updated">↑ Updated just now</div>' : ''}
+      <div class="crop-bar-bg">
+        <div class="crop-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${COLORS[i%COLORS.length]},#F5C518)"></div>
+      </div>`;
+    div.onclick = () => {
+      selectedCrop = crop;
+      showScreen('region');
+    };
+    grid.appendChild(div);
+  });
+}
+
+function renderPieChart() {
+  const ctx = document.getElementById('cropPieChart').getContext('2d');
+  if (pieChart) pieChart.destroy();
+  pieChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: crops.map(c => c.name),
+      datasets: [{
+        data: crops.map(c => c.total),
+        backgroundColor: COLORS,
+        borderWidth: 2,
+        borderColor: '#FFF8F2',
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw.toLocaleString()} MT` } }
+      },
+      cutout: '55%',
+    }
+  });
+}
+
+// ═══════════════════════════════════════════
+// LIVE UPDATES
+// ═══════════════════════════════════════════
+function startLiveUpdates() {
+  stopLiveUpdates();
+  liveInterval = setInterval(() => {
+    const idx = Math.floor(Math.random() * crops.length);
+    const inc = Math.floor(Math.random() * 80) + 10;
+    crops[idx].total += inc;
+    flashIds = [crops[idx].id];
+    renderCropGrid();
+    renderPieChart();
+    const total = crops.reduce((a,c) => a + c.total, 0);
+    document.getElementById('stat-total').textContent = (total/1000).toFixed(1) + 'K MT';
+    setTimeout(() => { flashIds = []; renderCropGrid(); }, 1400);
+  }, 3000);
+}
+
+function stopLiveUpdates() {
+  if (liveInterval) { clearInterval(liveInterval); liveInterval = null; }
+}
+
+// ═══════════════════════════════════════════
+// REGION VIEW
+// ═══════════════════════════════════════════
+function renderRegion() {
+  const regions = regionsData[selectedCrop.name] || [];
+
+  document.getElementById('region-header').innerHTML = `
+    <div style="font-size:38px">${selectedCrop.icon}</div>
+    <h2>${selectedCrop.name}</h2>
+    <p style="margin:0;font-size:13px;opacity:0.9">Total Available: <strong>${selectedCrop.total.toLocaleString()} ${selectedCrop.unit}</strong></p>
+    <p style="margin:4px 0 0;font-size:12px;opacity:0.75">Select a region to see farmers</p>`;
+
+  // Pie chart
+  const ctx = document.getElementById('regionPieChart').getContext('2d');
+  if (regionChart) regionChart.destroy();
+  regionChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: regions.map(r => r.region),
+      datasets: [{ data: regions.map(r => r.qty), backgroundColor: COLORS, borderWidth: 2, borderColor: '#FFF8F2' }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 10 }, padding: 10 } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} MT` } }
+      },
+      cutout: '50%',
+    }
+  });
+
+  // Region list
+  const list = document.getElementById('region-list');
+  list.innerHTML = '';
+  regions.forEach((r, i) => {
+    const div = document.createElement('div');
+    div.className = 'region-item';
+    div.style.borderLeftColor = COLORS[i % COLORS.length];
+    div.innerHTML = `
+      <div>
+        <div class="region-name">📍 ${r.region}</div>
+        <div class="region-farmers">${r.farmers} Farmers registered</div>
+      </div>
+      <div style="text-align:right">
+        <div class="region-qty">${r.qty} MT</div>
+        <div class="region-tap">tap to view →</div>
+      </div>`;
+    div.onclick = () => {
+      selectedRegion = r;
+      showScreen('farmers');
+    };
+    list.appendChild(div);
+  });
+}
+
+// ═══════════════════════════════════════════
+// FARMERS VIEW
+// ═══════════════════════════════════════════
+function renderFarmers() {
+  document.getElementById('farmer-header').innerHTML = `
+    <h2>📍 ${selectedRegion.region}</h2>
+    <p style="margin:0;font-size:13px;opacity:0.9">${selectedCrop?.name} · ${selectedRegion.qty} MT · ${selectedRegion.farmers} Farmers</p>`;
+
+  const farmers = farmersData[selectedRegion.region] || defaultFarmers;
+  const list = document.getElementById('farmer-list');
+  list.innerHTML = '';
+  farmers.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'farmer-card';
+    const waNum = f.phone.replace(/\s+/g,'').replace('+','');
+    div.innerHTML = `
+      <div class="farmer-avatar">${f.image}</div>
+      <div class="farmer-info">
+        <div class="farmer-name">${f.name}</div>
+        <div class="farmer-addr">📍 ${f.address}</div>
+        <div class="farmer-phone">📞 ${f.phone}</div>
+        <div class="farmer-tags">
+          <span class="tag-orange">🌾 ${f.qty} MT</span>
+          <span class="tag-green">✓ Verified</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="btn-contact" onclick="window.location.href='tel:${f.phone}'">📞 Call</button>
+        <button class="btn-whatsapp" onclick="window.open('https://wa.me/${waNum}?text=Hello, I am interested in your ${selectedCrop?.name} listing on NICCIAN Marketplace','_blank')">💬 WhatsApp</button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+// ═══════════════════════════════════════════
+// FARMER FORM
+// ═══════════════════════════════════════════
+function submitForm() {
+  showScreen('success');
+}
+
+// ═══════════════════════════════════════════
+// PWA — MANIFEST + SERVICE WORKER + INSTALL
+// ═══════════════════════════════════════════
+
+// Inline manifest
+const manifest = {
+  name: "NICCIAN Marketplace",
+  short_name: "NICCIAN",
+  description: "Tanzania Agriculture Wholesale Platform",
+  start_url: "./",
+  display: "standalone",
+  background_color: "#FFF8F2",
+  theme_color: "#F47920",
+  orientation: "portrait",
+  icons: [
+    {
+      src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><radialGradient id='g' cx='38%25' cy='35%25'><stop offset='0%25' stop-color='%23FFBA5A'/><stop offset='100%25' stop-color='%23F47920'/></radialGradient></defs><circle cx='50' cy='50' r='50' fill='url(%23g)'/><path d='M20 76 L20 26 L33 26 L58 62 L58 26 L72 26 L72 76 L59 76 L34 40 L34 76 Z' fill='white' opacity='0.95'/><path d='M60 28 Q74 14 84 20 Q80 36 66 37 Q63 33 60 28Z' fill='%235BA832'/></svg>",
+      sizes: "192x192",
+      type: "image/svg+xml",
+      purpose: "any maskable"
+    }
+  ]
+};
+
+const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+const manifestURL = URL.createObjectURL(manifestBlob);
+document.getElementById('manifest-placeholder').href = manifestURL;
+
+// Service Worker (inline via blob)
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    const CACHE = 'niccian-v1';
+    self.addEventListener('install', e => {
+      e.waitUntil(caches.open(CACHE).then(c => c.addAll(['/'])));
+      self.skipWaiting();
+    });
+    self.addEventListener('fetch', e => {
+      e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+    });
+  `;
+  const swBlob = new Blob([swCode], {type: 'application/javascript'});
+  const swURL = URL.createObjectURL(swBlob);
+  navigator.serviceWorker.register(swURL).catch(() => {});
+}
+
+// Install prompt
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-banner').classList.add('visible');
+});
+
+document.getElementById('btn-install-action').addEventListener('click', () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => {
+      deferredPrompt = null;
+      dismissInstall();
+    });
+  }
+});
+
+function dismissInstall() {
+  document.getElementById('install-banner').classList.remove('visible');
+}
+
+// iOS install hint (Safari doesn't support beforeinstallprompt)
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isInStandalone = window.navigator.standalone;
+if (isIOS && !isInStandalone) {
+  setTimeout(() => {
+    document.getElementById('install-banner').classList.add('visible');
+    document.getElementById('install-banner').querySelector('.install-text').textContent = '📱 Install on iPhone';
+    document.getElementById('install-banner').querySelector('.install-sub').textContent = 'Tap Share → "Add to Home Screen"';
+    document.getElementById('btn-install-action').style.display = 'none';
+  }, 3000);
+}
+</script>
+</body>
+</html>
